@@ -12,10 +12,14 @@ module GoogleInSpec
           @parent_identifier = parent_identifier
           if !args['userManaged'].nil?
             replicas = args['userManaged']['replicas']
-            @user_managed_replication_status = replicas.map { |v| UserManagedSecretVersionReplicationStatus.new(v) }
+            @user_managed_replication_status = replicas.map { |v| UserManagedSecretVersionReplicationStatus.new(v) }.to_a
           else
             @automatic_replication_status = AutomaticSecretVersionReplicationStatus.new(args['automatic'])
           end
+        end
+
+        def exists?
+          automatic? || user_managed?
         end
 
         def automatic?
@@ -24,6 +28,22 @@ module GoogleInSpec
 
         def user_managed?
           !@user_managed_replication_status.nil?
+        end
+
+        def to_h
+          auto_to_h.merge(user_managed_to_h)
+        end
+
+        private
+
+        def auto_to_h
+          return {} if @automatic_replication_status.nil?
+          { 'auto' => @automatic_replication_status.kms_key_version_name }
+        end
+
+        def user_managed_to_h
+          return {} if @user_managed_replication_status.nil?
+          @user_managed_replication_status.map { |status| [status.location, status.kms_key_version_name] }.to_h
         end
       end
 
@@ -45,7 +65,7 @@ module GoogleInSpec
           return if args.nil?
           @location = args['location']
           return if args['customerManagedEncryption'].nil?
-          @kms_key_name = args['customerManagedEncryption']['kmsKeyVersionName']
+          @kms_key_version_name = args['customerManagedEncryption']['kmsKeyVersionName']
         end
       end
     end

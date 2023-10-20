@@ -12,10 +12,14 @@ module GoogleInSpec
           @parent_identifier = parent_identifier
           if !args['userManaged'].nil?
             replicas = args['userManaged']['replicas']
-            @user_managed_replication = replicas.map { |v| UserManagedSecretReplication.new(v) }
+            @user_managed_replication = replicas.map { |v| UserManagedSecretReplication.new(v) }.to_a
           else
             @automatic_replication = AutomaticSecretReplication.new(args['automatic'])
           end
+        end
+
+        def exists?
+          automatic? || user_managed?
         end
 
         def automatic?
@@ -24,6 +28,22 @@ module GoogleInSpec
 
         def user_managed?
           !@user_managed_replication.nil?
+        end
+
+        def to_h
+          auto_to_h.merge(user_managed_to_h)
+        end
+
+        private
+
+        def auto_to_h
+          return {} if @automatic_replication.nil?
+          { 'auto' => @automatic_replication.kms_key_name }
+        end
+
+        def user_managed_to_h
+          return {} if @user_managed_replication.nil?
+          @user_managed_replication.map { |replica| [replica.location, replica.kms_key_name] }.to_h
         end
       end
 
