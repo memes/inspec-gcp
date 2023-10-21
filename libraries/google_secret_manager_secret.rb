@@ -32,7 +32,7 @@ class SecretManagerSecret < GcpResourceBase
     @replication = GoogleInSpec::SecretManager::Property::SecretReplication.new(@fetched['replication'], to_s)
     @create_time = parse_time_string(@fetched['createTime'])
     @labels = @fetched['labels']
-    @topics = Array.new { @fetched['topics'].map { |v| v['name'] } }
+    @topics = (@fetched['topics'] || {}).map { |v| v['name'] }.to_a
     @rotation = GoogleInSpec::SecretManager::Property::SecretRotation.new(@fetched['rotation'], to_s)
     @version_aliases = @fetched['versionAliases']
     @annotations = @fetched['annotations']
